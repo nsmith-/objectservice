@@ -1,0 +1,7 @@
+uvicorn[standard]
+fastapi
+sqlalchemy[asyncio]
+alembic
+asyncpg
+psycopg2
+black
