@@ -1,18 +1,18 @@
-import datetime
+import os
 from contextlib import asynccontextmanager
 
-import sqlalchemy.exc
-from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel, ConfigDict
-from sqlalchemy import select
+from fastapi import FastAPI, HTTPException, Request, status
+from starlette.middleware.sessions import SessionMiddleware
 
-from .db import Item, ORMBase, dbengine, session_factory
+from . import auth
+from .db import dbengine
+from .routers import items
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # async with dbengine.begin() as conn:
-    #     await conn.run_sync(ORMBase.metadata.create_all)
+    await auth.default_auth.load_server_metadata()
+    auth.patch_for_testenv(auth.default_auth)
     yield
     await dbengine.dispose()
 
@@ -21,44 +21,16 @@ app = FastAPI(
     title="objectservice",
     lifespan=lifespan,
 )
+app.add_middleware(SessionMiddleware, secret_key=os.environ["SESSION_SECRET"])
+app.include_router(items.router)
+app.include_router(auth.router)
 
 
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
-
-
-class ItemIn(BaseModel):
-    id: int
-    type: str
-
-
-class ItemOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    type: str
-    create_date: datetime.datetime
-
-
-@app.get("/items/{item_id}", response_model=ItemOut)
-async def read_item(item_id: int, q: str | None = None):
-    stmt = select(Item).where(Item.id == item_id)
-    async with session_factory() as session:
-        res = await session.scalars(stmt)
-        try:
-            return res.one()
-        except sqlalchemy.exc.NoResultFound:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="No item")
-
-
-@app.post("/items/", response_model=ItemOut)
-async def create_item(item: ItemIn):
-    obj = Item(**item.model_dump())
-    async with session_factory() as session:
-        session.add(obj)
-        try:
-            await session.commit()
-        except sqlalchemy.exc.IntegrityError:
-            raise HTTPException(status.HTTP_409_CONFLICT, detail="item id exists")
-    return obj
+def read_root(request: Request):
+    data = {
+        "Hello": "World",
+        "url": request.base_url,
+    }
+    data["user"] = request.session.get("user")
+    return data

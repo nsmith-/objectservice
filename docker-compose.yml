@@ -1,7 +1,9 @@
 version: "3.3"
 services:
   db:
-    image: postgres:12
+    build:
+      context: ./db
+      dockerfile: db.dockerfile
     volumes:
       - db-data:/var/lib/postgresql/data
     env_file:
@@ -26,6 +28,24 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  keycloak:
+    build:
+      context: ./keycloak
+      dockerfile: keycloak.dockerfile
+    ports:
+      - 8080:8080
+    environment:
+      - KEYCLOAK_IMPORT=/root/test-realm.json
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=admin
+      - DB_VENDOR=postgres
+      - DB_ADDR=db
+      - DB_DATABASE=keycloak
+      - DB_USER=keycloak
+      - DB_PASSWORD=keycloak
+    depends_on:
+      db:
+        condition: service_healthy
   restapi:
     ports:
       - "8888:8888"
@@ -39,5 +59,7 @@ services:
     depends_on:
       init-db:
         condition: service_completed_successfully
+      keycloak:
+        condition: service_started
 volumes:
   db-data:

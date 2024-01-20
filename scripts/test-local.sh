@@ -6,5 +6,5 @@ set -e
 docker-compose down -v --remove-orphans # Remove possibly previous broken stacks left hanging after an error
 docker-compose build
 docker-compose up -d
-docker-compose exec -T restapi pip install pytest httpx
+docker-compose exec -T restapi pip install pytest
 docker-compose exec -T restapi pytest /code/app "$@"

@@ -5,3 +5,6 @@ alembic
 asyncpg
 psycopg2
 black
+authlib
+itsdangerous
+httpx

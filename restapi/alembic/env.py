@@ -1,10 +1,8 @@
-from logging.config import fileConfig
 import os
-
-from sqlalchemy import create_engine
+from logging.config import fileConfig
 
 from alembic import context
-
+from sqlalchemy import create_engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -20,6 +18,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from app.db import ORMBase
+
 target_metadata = ORMBase.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -68,9 +67,7 @@ def run_migrations_online() -> None:
     connectable = create_engine(get_dburl())
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
