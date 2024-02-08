@@ -127,19 +127,20 @@ async def authorized_user(
     return user
 
 
+AuthorizedUser = Annotated[User, Depends(authorized_user)]
+Administrator = Annotated[User, Security(authorized_user, scopes=["admin"])]
+
 router = APIRouter(
-    prefix="/auth",
-    tags=["auth"],
+    prefix="/user",
+    tags=["user"],
 )
 
 
 @router.get("/profile", response_model=User)
-async def read_profile(user: Annotated[User, Depends(authorized_user)]):
+async def read_profile(user: AuthorizedUser):
     return user
 
 
-@router.get("/secured")
-async def read_own_items(
-    current_user: Annotated[User, Security(authorized_user, scopes=["blah"])]
-):
-    return "ok"
+@router.get("/admin")
+async def read_admin(user: Administrator):
+    return user

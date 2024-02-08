@@ -1,8 +1,15 @@
 import datetime
 import os
+from typing import Annotated
 
+from fastapi import Depends
 from sqlalchemy import ForeignKey, func, types
-from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncAttrs,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -44,5 +51,14 @@ dbengine = create_async_engine(get_dburl(), echo=True)
 session_factory = async_sessionmaker(dbengine, expire_on_commit=False)
 
 
+async def get_session():
+    async with session_factory() as session:
+        yield session
+
+
+DBSession = Annotated[AsyncSession, Depends(get_session)]
+
+
 async def check_revision():
+    # TODO: check alembic version somehow?
     pass
