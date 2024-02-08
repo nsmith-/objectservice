@@ -4,7 +4,6 @@ sqlalchemy[asyncio]
 alembic
 asyncpg
 psycopg2
-black
-authlib
-itsdangerous
+python-jose
+black  # test
 httpx

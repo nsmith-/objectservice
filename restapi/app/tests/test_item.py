@@ -1,12 +1,12 @@
 from fastapi.testclient import TestClient
 
 
-def test_crud_item(client: TestClient) -> None:
+def test_crud_item(client: TestClient, admin_token_headers) -> None:
     data = {
         "id": 1,
         "type": "blah",
     }
-    response = client.post("/items", json=data)
+    response = client.post("/items", json=data, headers=admin_token_headers)
     assert response.status_code == 200
     content = response.json()
     assert content["id"] == data["id"]
