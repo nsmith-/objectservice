@@ -43,6 +43,11 @@ services:
       - DB_DATABASE=keycloak
       - DB_USER=keycloak
       - DB_PASSWORD=keycloak
+    healthcheck:
+      test: ["CMD-SHELL", "curl localhost:8080"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
     depends_on:
       db:
         condition: service_healthy
@@ -60,6 +65,6 @@ services:
       init-db:
         condition: service_completed_successfully
       keycloak:
-        condition: service_started
+        condition: service_healthy
 volumes:
   db-data:

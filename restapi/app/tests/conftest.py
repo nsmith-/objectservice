@@ -29,8 +29,6 @@ def auth_flow(username: str, password: str) -> dict[str, str]:
     r = httpx.post(
         f"{provider_url}/protocol/openid-connect/token", auth=auth, data=login_data
     )
-    print(r.status_code)
-    print(r.json())
     tokens = r.json()
     a_token = tokens["access_token"]
     headers = {"Authorization": f"Bearer {a_token}"}

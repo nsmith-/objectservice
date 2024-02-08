@@ -1,13 +1,9 @@
 import datetime
 import os
 
-from sqlalchemy import func
-from sqlalchemy.ext.asyncio import (
-    AsyncAttrs,
-    async_sessionmaker,
-    create_async_engine,
-)
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import ForeignKey, func, types
+from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class ORMBase(AsyncAttrs, DeclarativeBase):
@@ -18,8 +14,23 @@ class Item(ORMBase):
     __tablename__ = "items"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    type: Mapped[str]
+    owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
     create_date: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+    type: Mapped[str]
+    data: Mapped[dict | list] = mapped_column(type_=types.JSON)
+
+    owner: Mapped["User"] = relationship(back_populates="items")
+
+
+class User(ORMBase):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    username: Mapped[str]
+    email: Mapped[str]
+    name: Mapped[str]
+
+    items: Mapped[list[Item]] = relationship(back_populates="owner")
 
 
 def get_dburl() -> str:
@@ -31,3 +42,7 @@ def get_dburl() -> str:
 
 dbengine = create_async_engine(get_dburl(), echo=True)
 session_factory = async_sessionmaker(dbengine, expire_on_commit=False)
+
+
+async def check_revision():
+    pass

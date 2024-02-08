@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Annotated
+from typing import Annotated, Any
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
@@ -47,6 +47,9 @@ _payload_example = {
 
 
 class OIDCAccountProvider(OpenIdConnect):
+    _key: dict[str, Any] | None
+    _issuer: str | None
+
     def __init__(self, provider_url: str):
         super().__init__(
             openIdConnectUrl=provider_url + "/.well-known/openid-configuration",
@@ -60,10 +63,10 @@ class OIDCAccountProvider(OpenIdConnect):
         async with httpx.AsyncClient() as client:
             config = (await client.get(self.model.openIdConnectUrl)).json()
             key_data = (await client.get(config["jwks_uri"])).json()
-        self._issuer: str = config["issuer"]
+        self._issuer = config["issuer"]
         self._key = {key["kid"]: jwk.construct(key) for key in key_data["keys"]}
 
-    async def __call__(self, request: Request) -> User | None:
+    async def __call__(self, request: Request) -> User | None:  # type: ignore[override]
         if not self._key:
             raise RuntimeError(
                 "Provider not initialized! Make sure to call setup() in app lifespan"
@@ -81,19 +84,19 @@ class OIDCAccountProvider(OpenIdConnect):
             )
             if payload.get("azp") != "restapi":
                 return None
-            print(payload)
+            logger.debug(payload)
             scopes = payload.get("scopes", [])
             # add also keycloak realm roles
             if realm := payload.get("realm_access"):
                 scopes += realm["roles"]
             return User(
-                sub=payload.get("sub"),
-                username=payload.get("preferred_username"),
+                sub=payload["sub"],
+                username=payload["preferred_username"],
                 email=payload.get("email"),
                 name=payload.get("name"),
                 scopes=scopes,
             )
-        except (JWTError, ValidationError) as ex:
+        except (JWTError, ValidationError, KeyError) as ex:
             logger.warning(str(ex))
             return None
 
@@ -103,7 +106,7 @@ account_provider = OIDCAccountProvider(os.environ["OIDC_PROVIDER"])
 
 async def authorized_user(
     security_scopes: SecurityScopes, user: Annotated[User, Depends(account_provider)]
-):
+) -> User:
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
