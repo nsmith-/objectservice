@@ -16,7 +16,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-  init-db:
+  init-cluster:
     volumes:
       - ./restapi:/code
     env_file:
@@ -24,9 +24,11 @@ services:
     build:
       context: ./restapi
       dockerfile: restapi.dockerfile
-    command: alembic upgrade head
+    command: ./init-cluster.sh
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
   keycloak:
     build:
@@ -44,7 +46,7 @@ services:
       - DB_USER=keycloak
       - DB_PASSWORD=keycloak
     healthcheck:
-      test: ["CMD-SHELL", "curl localhost:8080"]
+      test: ["CMD", "curl", "-f", "localhost:8080"]
       interval: 20s
       timeout: 5s
       retries: 5
@@ -62,9 +64,40 @@ services:
       context: ./restapi
       dockerfile: restapi.dockerfile
     depends_on:
-      init-db:
+      init-cluster:
         condition: service_completed_successfully
       keycloak:
         condition: service_healthy
+  minio:
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - s3-data:/data
+    env_file:
+      - .env
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - .env
+    image: "rabbitmq:3.12-management"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 volumes:
   db-data:
+  s3-data:

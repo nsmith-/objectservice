@@ -7,3 +7,5 @@ psycopg2
 python-jose
 black  # test
 httpx
+aiobotocore
+aio-pika
