@@ -98,6 +98,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+  ingest:
+    env_file:
+      - .env
+    build:
+      context: ./ingest
+      dockerfile: ingest.dockerfile
+    depends_on:
+      init-cluster:
+        condition: service_completed_successfully
 volumes:
   db-data:
   s3-data:

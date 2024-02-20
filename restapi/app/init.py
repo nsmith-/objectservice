@@ -61,12 +61,9 @@ async def main() -> int:
     # For RadosGW, we can use the SNS client
     # https://docs.ceph.com/en/latest/radosgw/notifications/#create-a-topic
     # For Minio it has to be set up via environment variables
-    if servertype == "MinIO":
-        exchange_name = os.environ["MINIO_NOTIFY_AMQP_EXCHANGE_RABBITMQ"]
-        queue_name = os.environ["MINIO_NOTIFY_AMQP_ROUTING_KEY_RABBITMQ"]
-    else:
-        exchange_name = "objectservice"
-        queue_name = "bucket.transfer-notifier"
+    exchange_name = os.environ["AMQP_EXCHANGE"]
+    queue_name = os.environ["AMQP_TRANSFER_TOPIC"]
+    if servertype != "MinIO":
         async with _get_client("sns") as client:
             try:
                 response = await client.create_topic(
