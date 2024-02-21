@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: restapi
+spec:
+  selector:
+    app: restapi
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restapi-deployment
+  labels:
+    app: restapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: restapi
+  template:
+    metadata:
+      labels:
+        app: restapi
+    spec:
+      initContainers:
+        - name: init-cluster
+          image: "objectservice-init-cluster"
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: rabbitmq-config
+            - configMapRef:
+                name: postgres-secret
+            - configMapRef:
+                name: oidc-config
+            - configMapRef:
+                name: s3-config
+      containers:
+        - name: restapi
+          image: "objectservice-restapi"
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: rabbitmq-config
+            - configMapRef:
+                name: postgres-secret
+            - configMapRef:
+                name: oidc-config
+            - configMapRef:
+                name: s3-config
+          resources:  # TODO: tune
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          readinessProbe:
+            httpGet:
+              port: 8080
+            initialDelaySeconds: 20
+            timeoutSeconds: 5
