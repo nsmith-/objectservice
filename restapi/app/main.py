@@ -16,6 +16,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="objectservice",
+    root_path="/api",
     lifespan=lifespan,
 )
 app.include_router(items.router)

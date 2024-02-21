@@ -1,0 +1,23 @@
+name: Minikube
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+jobs:
+  cluster-test:
+    runs-on: ubuntu-latest
+    name: Build and test local cluster
+    steps:
+    - uses: actions/checkout@v4
+    - name: Start minikube
+      uses: medyagh/setup-minikube@latest
+      with:
+        addons: ingress
+    - name: Local test
+      run: |
+        ./scripts/build-local.sh
+        kubectl apply -f deployments/test
+        kubectl wait --for=condition=Available --timeout 5m deployment/restapi-deployment
+        kubectl exec deployment/restapi-deployment -c restapi -- pytest /code/app

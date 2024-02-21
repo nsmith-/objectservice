@@ -15,6 +15,7 @@ spec:
       port: 15672
       targetPort: 15672
 ---
+# TODO: use statefulset instead https://blog.rabbitmq.com/posts/2020/08/deploying-rabbitmq-to-kubernetes-whats-involved/
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -40,6 +41,9 @@ spec:
           envFrom:
             - configMapRef:
                 name: rabbitmq-config
+          env:
+            - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
+              value: '-rabbitmq_management path_prefix "/mon/rabbit"'
           resources:  # TODO: tune
             requests:
               memory: "128Mi"

@@ -1,7 +1,6 @@
 import asyncio
 import os
 
-from aio_pika import connect_robust
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
 
@@ -15,19 +14,6 @@ def _get_client(service: str):
         aws_access_key_id=os.environ["S3_ACCESS_KEY"],
         aws_secret_access_key=os.environ["S3_SECRET_KEY"],
     )
-
-
-async def setup_notification_queue(exchange_name: str, queue_name: str):
-    connection = await connect_robust(
-        url=os.environ["AMQP_URL"],
-    )
-    async with connection:
-        channel = await connection.channel()
-        await channel.queue_delete(queue_name)
-        await channel.exchange_delete(exchange_name)
-        exchange = await channel.declare_exchange(exchange_name, "topic", durable=True)
-        queue = await channel.declare_queue(queue_name, durable=True)
-        await queue.bind(exchange, "#")  # TODO: can just bind queue_name
 
 
 async def main() -> int:
@@ -76,8 +62,6 @@ async def main() -> int:
                 )
             except ClientError as ex:
                 print(ex.response)
-
-    await setup_notification_queue(exchange_name, queue_name)
 
     # Bucket notification
     notification_events = [

@@ -5,7 +5,7 @@ alembic
 asyncpg
 psycopg2
 python-jose
-black  # test
 httpx
 aiobotocore
 aio-pika
+pytest  # for unit tests

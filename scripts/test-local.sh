@@ -1,10 +1,12 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 # Exit in case of error
 set -e
 
-docker-compose down -v --remove-orphans # Remove possibly previous broken stacks left hanging after an error
-docker-compose build
-docker-compose up -d
-docker-compose exec -T restapi pip install pytest
-docker-compose exec -T restapi pytest /code/app "$@"
+minikube start
+minikube addons enable ingress
+./scripts/build-local.sh
+kubectl apply -f deployments/test
+kubectl wait --for=condition=Available --timeout 5m deployment/restapi-deployment
+kubectl exec deployment/restapi-deployment -c restapi -- pytest /code/app
+echo "Run 'minikube delete' to clean up"
