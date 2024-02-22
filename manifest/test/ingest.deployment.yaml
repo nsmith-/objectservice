@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingest-deployment
+  labels:
+    app: ingest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ingest
+  template:
+    metadata:
+      labels:
+        app: ingest
+    spec:
+      containers:
+        - name: restapi
+          image: "ingest"
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: rabbitmq-config
+            - configMapRef:
+                name: s3-config
+          resources:  # TODO: tune
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1"

@@ -17,7 +17,9 @@ def _get_client(service: str):
 
 
 async def main() -> int:
-    servertype: str = "MinIO"  # | RadosGW
+    servertype: str = os.environ["S3_VENDOR"]
+    if servertype not in ("MinIO", "RadosGW"):
+        raise RuntimeError(f"Unsupported or missing S3_VENDOR: {servertype!r}")
 
     # Set up buckets
     async with _get_client("s3") as client:

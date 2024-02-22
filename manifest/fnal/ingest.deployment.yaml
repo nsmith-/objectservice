@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: restapi
-          image: "objectservice-ingest"
-          imagePullPolicy: Never
+          image: "imageregistry.fnal.gov:443/objectservice/ingest:dev"
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: rabbitmq-config

@@ -1,4 +1,4 @@
-FROM rootproject/root:6.30.04-ubuntu22.04
+FROM docker.io/rootproject/root:6.30.04-ubuntu22.04
 
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 

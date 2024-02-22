@@ -18,6 +18,6 @@ jobs:
     - name: Local test
       run: |
         ./scripts/build-local.sh
-        kubectl apply -f deployments/test
+        kubectl apply -f manifest/test
         kubectl wait --for=condition=Available --timeout 5m deployment/restapi-deployment
         kubectl exec deployment/restapi-deployment -c restapi -- pytest /code/app

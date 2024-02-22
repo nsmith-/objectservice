@@ -1,4 +1,4 @@
-FROM objectservice-restapi
+FROM restapi
 
 COPY alembic /code/alembic
 

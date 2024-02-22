@@ -29,8 +29,8 @@ spec:
     spec:
       initContainers:
         - name: init-cluster
-          image: "objectservice-init-cluster"
-          imagePullPolicy: Never
+          image: "imageregistry.fnal.gov:443/objectservice/init-cluster:dev"
+          imagePullPolicy: Always
           envFrom:
             - configMapRef:
                 name: rabbitmq-config
@@ -42,8 +42,8 @@ spec:
                 name: s3-config
       containers:
         - name: restapi
-          image: "objectservice-restapi"
-          imagePullPolicy: Never
+          image: "imageregistry.fnal.gov:443/objectservice/restapi:dev"
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           envFrom:
