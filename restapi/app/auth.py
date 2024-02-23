@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
 from fastapi.security.oauth2 import SecurityScopes, get_authorization_scheme_param
 from fastapi.security.open_id_connect_url import OpenIdConnect
 from jose import JWTError, jwk, jwt
+from jose.exceptions import JWKError
 from pydantic import BaseModel, Field, ValidationError
 
 logger = logging.getLogger(__name__)
@@ -64,7 +65,12 @@ class OIDCAccountProvider(OpenIdConnect):
             config = (await client.get(self.model.openIdConnectUrl)).json()
             key_data = (await client.get(config["jwks_uri"])).json()
         self._issuer = config["issuer"]
-        self._key = {key["kid"]: jwk.construct(key) for key in key_data["keys"]}
+        self._key = {}
+        for key in key_data["keys"]:
+            try:
+                self._key[key["kid"]] = jwk.construct(key)
+            except JWKError as ex:
+                logger.warning(f"Could not parse JWKS key {key['kid']}: {ex}")
 
     async def __call__(self, request: Request) -> User | None:  # type: ignore[override]
         if not self._key:
