@@ -1,0 +1,17 @@
+uvicorn[standard]
+fastapi
+sqlalchemy[asyncio]
+alembic
+asyncpg
+psycopg2-binary
+python-jose
+httpx
+aiobotocore
+aio-pika
+pytest
+flake8
+black
+mypy
+types-python-jose
+types-aiobotocore[s3,sns,iam]
+isort
