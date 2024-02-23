@@ -14,20 +14,3 @@ spec:
                 name: restapi
                 port:
                   name: http
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: rabbitmq-management-ingress
-spec:
-  rules:
-    - host: objectservice.fnal.gov
-      http:
-        paths:
-          - path: /mon/rabbit
-            pathType: Prefix
-            backend:
-              service:
-                name: rabbitmq
-                port:
-                  name: http
