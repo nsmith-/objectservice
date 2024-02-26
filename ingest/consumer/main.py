@@ -41,6 +41,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     # TODO: catch graceful termination
     exit(asyncio.run(main()))
