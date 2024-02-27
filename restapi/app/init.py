@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 
-from . import s3util
+from .shared import s3util
 
 logger = logging.getLogger(__name__)
 

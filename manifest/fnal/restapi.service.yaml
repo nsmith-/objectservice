@@ -65,6 +65,6 @@ spec:
           readinessProbe:
             httpGet:
               port: 8080
-            initialDelaySeconds: 20
+            initialDelaySeconds: 10
             periodSeconds: 60
             timeoutSeconds: 5

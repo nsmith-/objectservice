@@ -1,44 +1,15 @@
-import datetime
-from typing import Any
-
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, ConfigDict
-from pydantic.types import Json
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from ..auth import AuthorizedUser
 from ..db import DBSession, Item, User
+from ..shared.models.item import ItemIn, ItemOut
 
 router = APIRouter(
     prefix="/items",
     tags=["items"],
 )
-
-
-class ItemIn(BaseModel):
-    type: str
-    data: Json[Any]
-
-
-class OwnerOut(BaseModel):
-    # attributes read from db.User
-    model_config = ConfigDict(from_attributes=True)
-
-    name: str
-    username: str
-    email: str
-
-
-class ItemOut(BaseModel):
-    # attributes read from db.Item
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    owner: OwnerOut
-    create_date: datetime.datetime
-    type: str
-    data: Any
 
 
 @router.get("/", response_model=list[ItemOut])

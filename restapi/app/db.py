@@ -39,6 +39,10 @@ class User(ORMBase):
 
     items: Mapped[list[Item]] = relationship(back_populates="owner")
 
+    @property
+    def sub(self):
+        return self.id
+
 
 def get_dburl() -> str:
     user = os.environ["POSTGRES_USER"]

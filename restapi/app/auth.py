@@ -1,24 +1,17 @@
 import logging
 import os
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
 from fastapi.security.oauth2 import SecurityScopes, get_authorization_scheme_param
 from fastapi.security.open_id_connect_url import OpenIdConnect
 from jose import JWTError, jwt
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
-from . import jwtutil
+from .shared import jwtutil
+from .shared.models.user import CurrentUser
 
 logger = logging.getLogger(__name__)
-
-
-class User(BaseModel):
-    sub: str = Field(description="Subject (user unique ID)")
-    username: str
-    email: str | None = None
-    name: str | None = None
-    scopes: list[str] = []
 
 
 _payload_example = {
@@ -62,7 +55,7 @@ class OIDCAccountProvider(OpenIdConnect):
     async def setup(self):
         self._data = await jwtutil.fetch_OIDCProviderData(self.model.openIdConnectUrl)
 
-    async def __call__(self, request: Request) -> User | None:  # type: ignore[override]
+    async def __call__(self, request: Request) -> CurrentUser | None:  # type: ignore[override]
         if not self._data:
             raise RuntimeError(
                 "Provider not initialized! Make sure to call setup() in app lifespan"
@@ -85,7 +78,7 @@ class OIDCAccountProvider(OpenIdConnect):
             # add also keycloak realm roles
             if realm := payload.get("realm_access"):
                 scopes += realm["roles"]
-            return User(
+            return CurrentUser(
                 sub=payload["sub"],
                 username=payload["preferred_username"],
                 email=payload.get("email"),
@@ -101,8 +94,9 @@ account_provider = OIDCAccountProvider(os.environ["OIDC_PROVIDER"])
 
 
 async def authorized_user(
-    security_scopes: SecurityScopes, user: Annotated[User, Depends(account_provider)]
-) -> User:
+    security_scopes: SecurityScopes,
+    user: Annotated[CurrentUser, Depends(account_provider)],
+) -> CurrentUser:
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
@@ -123,8 +117,8 @@ async def authorized_user(
     return user
 
 
-AuthorizedUser = Annotated[User, Depends(authorized_user)]
-Administrator = Annotated[User, Security(authorized_user, scopes=["admin"])]
+AuthorizedUser = Annotated[CurrentUser, Depends(authorized_user)]
+Administrator = Annotated[CurrentUser, Security(authorized_user, scopes=["admin"])]
 
 router = APIRouter(
     prefix="/user",
@@ -132,11 +126,11 @@ router = APIRouter(
 )
 
 
-@router.get("/profile", response_model=User)
+@router.get("/profile", response_model=CurrentUser)
 async def read_profile(user: AuthorizedUser):
     return user
 
 
-@router.get("/admin")
+@router.get("/admin", response_model=CurrentUser)
 async def read_admin(user: Administrator):
     return user

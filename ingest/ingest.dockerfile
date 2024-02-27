@@ -10,4 +10,6 @@ RUN python3 -m pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 COPY consumer /code/consumer
 
+COPY --from=shared /shared /code/consumer/shared
+
 CMD ["python3", "-m", "consumer.main"]
