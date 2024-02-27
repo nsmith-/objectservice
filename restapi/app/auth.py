@@ -38,6 +38,8 @@ _payload_example = {
     "family_name": "Worm",
     "email": "readonly@test.com",
 }
+OAUTH_CLIENT_ID = os.environ["OAUTH_CLIENT_ID"]
+OIDC_PROVIDER = os.environ["OIDC_PROVIDER"]
 
 
 class OIDCAccountProvider(OpenIdConnect):
@@ -71,7 +73,11 @@ class OIDCAccountProvider(OpenIdConnect):
                 audience="account",
                 issuer=self._data.issuer,
             )
-            if payload.get("azp") != "restapi":
+            azp: str = payload.get("azp", "")
+            if azp != OAUTH_CLIENT_ID:
+                logger.warning(
+                    f"Token authorized party {azp} does not match {OAUTH_CLIENT_ID=}"
+                )
                 return None
             logger.debug(payload)
             scopes = payload.get("scopes", [])
@@ -90,7 +96,7 @@ class OIDCAccountProvider(OpenIdConnect):
             return None
 
 
-account_provider = OIDCAccountProvider(os.environ["OIDC_PROVIDER"])
+account_provider = OIDCAccountProvider(OIDC_PROVIDER)
 
 
 async def authorized_user(

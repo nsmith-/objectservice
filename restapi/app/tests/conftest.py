@@ -20,15 +20,10 @@ def auth_flow(username: str, password: str) -> dict[str, str]:
         "scope": "openid",
         "username": username,
         "password": password,
+        "client_id": os.environ["OAUTH_CLIENT_ID"],
     }
     provider_url = os.environ["OIDC_PROVIDER"]
-    auth = httpx.BasicAuth(
-        username=os.environ["OAUTH_CLIENT_ID"],
-        password=os.environ["OAUTH_CLIENT_SECRET"],
-    )
-    r = httpx.post(
-        f"{provider_url}/protocol/openid-connect/token", auth=auth, data=login_data
-    )
+    r = httpx.post(f"{provider_url}/protocol/openid-connect/token", data=login_data)
     tokens = r.json()
     a_token = tokens["access_token"]
     headers = {"Authorization": f"Bearer {a_token}"}
