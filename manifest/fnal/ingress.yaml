@@ -3,6 +3,10 @@ kind: Ingress
 metadata:
   name: restapi-ingress
 spec:
+  tls:
+  - hosts:
+      - objectservice.fnal.gov
+    secretName: objectservice-tls
   rules:
     - host: objectservice.fnal.gov
       http:
