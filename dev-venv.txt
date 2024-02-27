@@ -13,5 +13,5 @@ flake8
 black
 mypy
 types-python-jose
-types-aiobotocore[s3,sns,iam]
+types-aiobotocore[s3,sns,iam,sts]
 isort

@@ -1,9 +1,10 @@
 import os
 from logging.config import fileConfig
 
+from sqlalchemy import create_engine
+
 from alembic import context  # type: ignore[attr-defined]
 from app.db import ORMBase
-from sqlalchemy import create_engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

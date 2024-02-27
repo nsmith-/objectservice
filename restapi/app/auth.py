@@ -2,13 +2,13 @@ import logging
 import os
 from typing import Annotated, Any
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
 from fastapi.security.oauth2 import SecurityScopes, get_authorization_scheme_param
 from fastapi.security.open_id_connect_url import OpenIdConnect
-from jose import JWTError, jwk, jwt
-from jose.exceptions import JWKError
+from jose import JWTError, jwt
 from pydantic import BaseModel, Field, ValidationError
+
+from . import jwtutil
 
 logger = logging.getLogger(__name__)
 
@@ -48,32 +48,22 @@ _payload_example = {
 
 
 class OIDCAccountProvider(OpenIdConnect):
-    _key: dict[str, Any] | None
-    _issuer: str | None
+    _data: jwtutil.OIDCProviderData | None
 
-    def __init__(self, provider_url: str):
+    def __init__(self, oidc_provider_url: str):
         super().__init__(
-            openIdConnectUrl=provider_url + "/.well-known/openid-configuration",
-            scheme_name=provider_url,
+            openIdConnectUrl=oidc_provider_url + jwtutil.OIDC_WELLKNOWN,
+            scheme_name=oidc_provider_url,
             description="OpenID-connect provider",
             auto_error=False,
         )
-        self._key = None
+        self._data = None
 
     async def setup(self):
-        async with httpx.AsyncClient() as client:
-            config = (await client.get(self.model.openIdConnectUrl)).json()
-            key_data = (await client.get(config["jwks_uri"])).json()
-        self._issuer = config["issuer"]
-        self._key = {}
-        for key in key_data["keys"]:
-            try:
-                self._key[key["kid"]] = jwk.construct(key)
-            except JWKError as ex:
-                logger.warning(f"Could not parse JWKS key {key['kid']}: {ex}")
+        self._data = await jwtutil.fetch_OIDCProviderData(self.model.openIdConnectUrl)
 
     async def __call__(self, request: Request) -> User | None:  # type: ignore[override]
-        if not self._key:
+        if not self._data:
             raise RuntimeError(
                 "Provider not initialized! Make sure to call setup() in app lifespan"
             )
@@ -84,9 +74,9 @@ class OIDCAccountProvider(OpenIdConnect):
         try:
             payload = jwt.decode(
                 token,
-                key=self._key,
+                key=self._data.keys,
                 audience="account",
-                issuer=self._issuer,
+                issuer=self._data.issuer,
             )
             if payload.get("azp") != "restapi":
                 return None
