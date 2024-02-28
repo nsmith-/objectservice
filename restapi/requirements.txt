@@ -8,4 +8,5 @@ python-jose
 httpx
 aiobotocore
 aio-pika
+python-multipart
 pytest  # for unit tests
