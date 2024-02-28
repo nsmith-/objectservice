@@ -12,4 +12,6 @@ COPY consumer /code/consumer
 
 COPY --from=shared /shared /code/consumer/shared
 
+COPY convert.py /code/
+
 CMD ["python3", "-m", "consumer.main"]

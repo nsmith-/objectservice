@@ -65,8 +65,9 @@ async def main() -> int:
         await s3util.set_bucket_policy(
             client=client,
             bucket="transfer-inbox",
-            principal="arn:aws:iam:::user/cmsuser",
-            policy_type="read-write",
+            policy_map={
+                "arn:aws:iam:::user/cmsuser": "read-write",
+            }
         )
         await client.put_bucket_notification_configuration(
             Bucket="transfer-inbox",

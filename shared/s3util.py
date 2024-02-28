@@ -14,8 +14,6 @@ if TYPE_CHECKING:
 from aiobotocore.session import get_session
 from botocore.exceptions import ClientError
 
-from . import jwtutil
-
 logger = logging.getLogger(__name__)
 
 
@@ -68,40 +66,50 @@ async def create_bucket(
         raise
 
 
+PolicyType = Literal["read-write", "all"]
+
+
+def _policy_actions(policy_type: PolicyType) -> list[str]:
+    if policy_type == "read-write":
+        return [
+            "s3:GetBucketLocation",
+            "s3:ListBucket",
+            "s3:ListBucketMultipartUploads",
+            "s3:GetObject",
+            "s3:PutObject",
+            "s3:DeleteObject",
+            "s3:ListMultipartUploadParts",
+            "s3:AbortMultipartUpload",
+        ]
+    elif policy_type == "all":
+        return ["s3:*"]
+    raise ValueError(f"Unknown policy_type {policy_type}")
+
+
 async def set_bucket_policy(
-    client: "S3Client", bucket: str, principal: str, policy_type: Literal["read-write"]
+    client: "S3Client", bucket: str, policy_map: dict[str, PolicyType]
 ):
     """Set one of a few canned policies on a bucket
 
+    policy_map maps principal to policy type
     principal can either be:
      - a user ARN, e.g. arn:aws:iam:::user/cmsuser", or
      - a role ARN, e.g. "arn:aws:iam:::role/oidcuser"
-    policy_type: read-write, read, etc.
+    policy type is read-write, read, etc.
     """
-    # TODO: other policies
-    if policy_type not in ("read-write"):
-        raise ValueError(f"Unknown policy {policy_type}")
     policy = {
         "Version": "2012-10-17",
         "Statement": [
             {
                 "Effect": "Allow",
                 "Principal": {"AWS": [principal]},
-                "Action": [
-                    "s3:GetBucketLocation",
-                    "s3:ListBucket",
-                    "s3:ListBucketMultipartUploads",
-                    "s3:GetObject",
-                    "s3:PutObject",
-                    "s3:DeleteObject",
-                    "s3:ListMultipartUploadParts",
-                    "s3:AbortMultipartUpload",
-                ],
+                "Action": _policy_actions(policy_type),
                 "Resource": [
                     f"arn:aws:s3:::{bucket}",
                     f"arn:aws:s3:::{bucket}/*",
                 ],
-            },
+            }
+            for principal, policy_type in policy_map.items()
         ],
     }
     policy_document = json.dumps(policy, separators=(",", ":"))
@@ -124,6 +132,8 @@ async def register_oidc_provider(
 
     Returns the provider ARN
     """
+    from . import jwtutil
+
     if oidc_provider_url.startswith("https://"):
         oidc_provider_arn = RGW_OIDCPROVIDER_PREFIX + oidc_provider_url.removeprefix(
             "https://"
