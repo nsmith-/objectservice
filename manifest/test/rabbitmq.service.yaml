@@ -51,13 +51,8 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "1"
-          livenessProbe:
-            exec:
-              command: ["rabbitmq-diagnostics", "-q", "check_running"]
-            initialDelaySeconds: 10
-            timeoutSeconds: 5
           readinessProbe:
-            exec: 
-              command: ["rabbitmq-diagnostics", "-q", "check_local_alarms"]
+            tcpSocket:
+              port: 5672
             initialDelaySeconds: 20
             timeoutSeconds: 5

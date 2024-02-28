@@ -5,6 +5,9 @@ import os
 
 from aio_pika import ExchangeType, connect_robust
 from aio_pika.abc import AbstractIncomingMessage
+from pydantic import ValidationError
+
+from .message import AWSEvent
 
 logger = logging.getLogger(__name__)
 
@@ -12,10 +15,13 @@ logger = logging.getLogger(__name__)
 async def process(message: AbstractIncomingMessage):
     async with message.process(requeue=True):
         assert message.routing_key == "bucket.transfer-notifier"
-        # TODO: message schema
-        data = json.loads(message.body)  # TODO: error here = reject without requeue
+        try:
+            data = AWSEvent.model_validate_json(message.body)
+        except (ValueError, ValidationError) as ex:
+            logger.error(f"Failed to parse incoming message {message}: {ex}")
+            await message.reject(requeue=False)
         # TODO: restapi call to register new file and record start of conversion
-        logger.debug(f" [x] {message.routing_key!r}:{data!r}")
+        logger.debug(f" [x] {message.routing_key}:{data}")
     # TODO: subprocess to run conversion
     # TODO: restapi call to declare conversion (partially?) finished
 
