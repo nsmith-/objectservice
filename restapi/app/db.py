@@ -3,7 +3,7 @@ import os
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy import ForeignKey, func, types
+from sqlalchemy import DateTime, ForeignKey, func, types
 from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
     AsyncSession,
@@ -22,7 +22,9 @@ class Item(ORMBase):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"))
-    create_date: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
+    create_date: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
     type: Mapped[str]
     data: Mapped[dict | list] = mapped_column(type_=types.JSON)
 
@@ -45,10 +47,10 @@ class User(ORMBase):
 
 
 def get_dburl() -> str:
-    user = os.environ["POSTGRES_USER"]
-    pw = os.environ["POSTGRES_PASSWORD"]
-    db = os.environ["POSTGRES_DB"]
-    return f"postgresql+asyncpg://{user}:{pw}@db/{db}"
+    dburl = os.environ["DB_URL"]
+    if dburl.startswith("postgresql://"):
+        return dburl.replace("postgresql://", "postgresql+asyncpg://", 1)
+    raise RuntimeError("Only PostgreSQL is supported")
 
 
 dbengine = create_async_engine(get_dburl(), echo=True)

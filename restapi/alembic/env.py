@@ -28,10 +28,7 @@ target_metadata = ORMBase.metadata
 
 
 def get_dburl() -> str:
-    user = os.environ["POSTGRES_USER"]
-    pw = os.environ["POSTGRES_PASSWORD"]
-    db = os.environ["POSTGRES_DB"]
-    return f"postgresql://{user}:{pw}@db/{db}"
+    return os.environ["DB_URL"]
 
 
 def run_migrations_offline() -> None:

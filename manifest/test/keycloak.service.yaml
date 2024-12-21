@@ -6,10 +6,10 @@ spec:
   selector:
     app: keycloak
   ports:
-    - name: http
+    - name: https
       protocol: TCP
-      port: 80
-      targetPort: 8080
+      port: 443
+      targetPort: 8443
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -32,7 +32,7 @@ spec:
           image: "keycloak"
           imagePullPolicy: Never
           ports:
-            - containerPort: 8080
+            - containerPort: 8443
           env:
             - name: KEYCLOAK_IMPORT
               value: /root/test-realm.json
@@ -52,7 +52,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /auth/realms/test
-              port: 8080
-              scheme: HTTP
+              port: 8443
+              scheme: HTTPS
             initialDelaySeconds: 40
             periodSeconds: 5

@@ -1,3 +1,4 @@
+import datetime
 from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -22,7 +23,7 @@ async def read_items(
         statement = select(Item).where(Item.owner_id == user.sub)
     statement = statement.offset(offset).limit(limit).options(selectinload(Item.owner))
     rows = await session.execute(statement)
-    items = [ItemOut.model_validate(item) for item, in rows]
+    items = [ItemOut.model_validate(item) for (item,) in rows]
     return items
 
 

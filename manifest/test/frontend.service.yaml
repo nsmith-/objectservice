@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector:
+    app: frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "frontend"
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:
+            - name: REACT_APP_OAUTH_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: oidc-config
+                  key: OAUTH_CLIENT_ID
+            - name: REACT_APP_OIDC_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: oidc-config
+                  key: OIDC_PROVIDER
+            - name: REACT_APP_API_BASE_URL
+              value: "/api"
+            - name: REACT_APP_OAUTH_REDIRECT_URI_BASE
+              valueFrom:
+                configMapKeyRef:
+                  name: oidc-config
+                  key: OAUTH_REDIRECT_URI_BASE
